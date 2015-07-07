@@ -2,7 +2,6 @@ package actors
 
 import java.util.UUID
 
-import actors.MowerMessages._
 import actors.SurfaceActor.SurfaceConfig
 import actors.SurfaceMessages.BeginProcessing
 import akka.actor._
@@ -32,39 +31,41 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
         val mowerRef = context.actorOf(MowerActor.props(), mowerId)
         children += mowerRef
         log.debug(s"Handling actor $mowerRef")
-        mowerRef ! ExecuteCommands(mower = key._1, commands = key._2, 0)
+        mowerRef ! MowerMessages.ExecuteCommands(mower = key._1, commands = key._2, 0)
       })
       context become working
   }
 
   def working: Receive = {
-    case RequestAuthorisation(currentState: Mower, newState: Mower, remainingCommands: List[Command], retry: Int) =>
-      log.info(s"RequestPosition:<${newState.pos}> UsedPositions:<$usedPositions> retry:<$retry>")
+    case MowerMessages.RequestAuthorisation(currentState: Mower, newState: Mower, remainingCommands: List[Command], retry: Int) =>
+      log.info(s"RequestPosition:<${newState.pos}> usedPositions:<$usedPositions> retry:<$retry>")
 
       usedPositions.filter(_ == newState.pos).toList match {
         case Nil =>
-          sender() ! PositionAllowed(newState, remainingCommands: List[Command])
+          sender() ! MowerMessages.PositionAllowed(newState, remainingCommands: List[Command])
           usedPositions -= currentState.pos
           usedPositions += newState.pos
 
         case _ if retry <= MAX_RETRY =>
-          sender() ! PositionRejected(newState, remainingCommands, retry + 1)
+          log.info(s"Position <${newState.pos}> rejected!!")
+          sender() ! MowerMessages.PositionRejected(newState, remainingCommands, retry + 1)
 
         case _ if retry > MAX_RETRY =>
+          log.info(s"Stopping mower:<$currentState> because no attempts remaining!")
           sender() ! MowerMessages.TerminateProcessing(currentState)
       }
 
-    case AllCommandsExecuted(mower: Mower) =>
-      log.info(s"All commands executed for <$mower> ...")
+    case MowerMessages.AllCommandsExecutedOn(mower: Mower) =>
+      log.info(s"All commands executed on <$mower> ...")
       usedPositions -= mower.pos
-      context become ready
 
     case SurfaceMessages.PrintSystemState =>
-      children foreach (_ ! PrintPosition)
+      children foreach (_ ! MowerMessages.PrintPosition)
 
-    case TerminateProcessing =>
-      children foreach (_ ! TerminateProcessing)
+    case MowerMessages.TerminateProcessing =>
+      children foreach (_ ! MowerMessages.TerminateProcessing)
       context become ready
+      //context.system.terminate()
   }
 
 }

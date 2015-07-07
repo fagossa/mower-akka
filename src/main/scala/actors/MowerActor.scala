@@ -7,38 +7,42 @@ class MowerActor extends Actor with ActorLogging {
 
   def receive = {
     case MowerMessages.ExecuteCommands(mower: Mower, commands: List[Command], retry: Int) =>
-      log.info(s"===> Executing instructions for $mower, remaining: $commands")
+      log.info(s"Executing instructions for <$mower>, remaining: <$commands>")
       commands.size match {
-        case 0 => context.parent ! MowerMessages.AllCommandsExecuted(mower)
+        case 0 => context.parent ! MowerMessages.AllCommandsExecutedOn(mower)
         case _ => handleRemainingCommands(mower, commands, retry)
       }
 
     case MowerMessages.PositionAllowed(newState: Mower, commands: List[Command]) =>
-      log.info(s"===> Position ${newState.pos} authorized, remaining:${commands.tail}")
+      log.info(s"Position <${newState.pos}> authorized, remaining:<${commands.tail}>")
       self ! MowerMessages.ExecuteCommands(newState, commands.tail, 0)
 
     case MowerMessages.PositionRejected(mower: Mower, commands: List[Command], retry: Int) =>
-      log.info(s"===> Position ${mower.pos} rejected!!")
       self ! MowerMessages.ExecuteCommands(mower, commands, retry)
 
     case MowerMessages.PrintPosition =>
-      log.info(s"===> Current position ")
+      log.info(s"Current position ...")
 
     case MowerMessages.TerminateProcessing(mower: Mower) =>
-      log.info(s"===> Stoping mower:<$mower> ")
       context stop self
+
+    case _ =>
+      log.error("Shutting down the system!!!")
+      context.system.terminate()
 
   }
 
   def handleRemainingCommands(mower: Mower, commands: List[Command], retry: Int) = {
     commands.head match {
       case command@Forward =>
-        log.debug(s"===> Going forward on $mower, remaining:${commands.tail}")
+        log.debug(s"Going forward on <$mower>, remaining:<${commands.tail}>, retry:<$retry>")
         val newState = mower.forward
         context.parent ! MowerMessages.RequestAuthorisation(mower, newState, commands, retry)
 
-      case command@_ =>
-        log.debug(s"===> Rotating:$command, remaining:${commands.tail}")
+      case _ =>
+        // TODO: improve
+        val command = commands.head
+        log.debug(s"Rotating:<$command>, remaining:<${commands.tail}>")
         val newState = mower.rotate(command)
         self ! MowerMessages.ExecuteCommands(newState, commands.tail, 0)
     }
@@ -59,7 +63,7 @@ object MowerMessages {
 
   case class TerminateProcessing(mower: Mower)
 
-  case class AllCommandsExecuted(mower: Mower)
+  case class AllCommandsExecutedOn(mower: Mower)
 
 }
 
