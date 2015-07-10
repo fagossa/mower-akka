@@ -28,7 +28,7 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
       log.info(s"BeginProcessing...")
       initialState foreach (key => {
         val mowerId = s"Mower-${UUID.randomUUID().toString}"
-        val mowerRef = context.actorOf(MowerActor.props(), mowerId)
+        val mowerRef = context.actorOf(MowerActor.props(context.self), mowerId)
         children += mowerRef
         log.debug(s"Handling actor $mowerRef")
         mowerRef ! MowerMessages.ExecuteCommands(mower = key._1, commands = key._2, 0)

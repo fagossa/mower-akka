@@ -1,15 +1,15 @@
 package actors
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{ActorRef, Actor, ActorLogging, Props}
 import model.{Command, Forward, Mower}
 
-class MowerActor extends Actor with ActorLogging {
+class MowerActor(parent: ActorRef) extends Actor with ActorLogging {
 
   def receive = {
     case MowerMessages.ExecuteCommands(mower: Mower, commands: List[Command], retry: Int) =>
       log.info(s"Executing instructions for <$mower>, remaining: <$commands>")
-      commands.size match {
-        case 0 => context.parent ! MowerMessages.AllCommandsExecutedOn(mower)
+      commands match {
+        case Nil => parent ! MowerMessages.AllCommandsExecutedOn(mower)
         case _ => handleRemainingCommands(mower, commands, retry)
       }
 
@@ -37,7 +37,7 @@ class MowerActor extends Actor with ActorLogging {
       case command@Forward :: tail =>
         log.debug(s"Going forward on <$mower>, remaining:<$tail>, retry:<$retry>")
         val newState = mower.forward
-        context.parent ! MowerMessages.RequestAuthorisation(mower, newState, commands, retry)
+        parent ! MowerMessages.RequestAuthorisation(mower, newState, commands, retry)
 
       case command :: tail =>
         log.debug(s"Rotating:<$command>, remaining:<$tail>")
@@ -67,6 +67,6 @@ object MowerMessages {
 
 object MowerActor {
 
-  def props(): Props = Props(classOf[MowerActor])
+  def props(parent: ActorRef): Props = Props(classOf[MowerActor], parent)
 
 }
