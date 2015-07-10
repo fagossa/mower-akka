@@ -33,16 +33,14 @@ class MowerActor extends Actor with ActorLogging {
   }
 
   def handleRemainingCommands(mower: Mower, commands: List[Command], retry: Int) = {
-    commands.head match {
-      case command@Forward =>
-        log.debug(s"Going forward on <$mower>, remaining:<${commands.tail}>, retry:<$retry>")
+    commands match {
+      case command@Forward :: tail =>
+        log.debug(s"Going forward on <$mower>, remaining:<$tail>, retry:<$retry>")
         val newState = mower.forward
         context.parent ! MowerMessages.RequestAuthorisation(mower, newState, commands, retry)
 
-      case _ =>
-        // TODO: improve
-        val command = commands.head
-        log.debug(s"Rotating:<$command>, remaining:<${commands.tail}>")
+      case command :: tail =>
+        log.debug(s"Rotating:<$command>, remaining:<$tail>")
         val newState = mower.rotate(command)
         self ! MowerMessages.ExecuteCommands(newState, commands.tail, 0)
     }

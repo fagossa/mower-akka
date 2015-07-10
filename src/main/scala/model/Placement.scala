@@ -11,7 +11,7 @@ case object Left extends Command
 case object Forward extends Command
 
 
-sealed trait Orientation extends Instruction
+sealed trait Orientation
 
 case object North extends Orientation
 
