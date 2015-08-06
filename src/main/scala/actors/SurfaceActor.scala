@@ -1,7 +1,5 @@
 package actors
 
-import java.util.UUID
-
 import actors.SurfaceActor.SurfaceConfig
 import actors.SurfaceMessages.BeginProcessing
 import akka.actor._
@@ -11,13 +9,10 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
 
   val MAX_RETRY = 10
 
-  var children = Set.empty[ActorRef]
-
-  var usedPositions = Set.empty[Position]
+  var usedPositions = scala.collection.mutable.Map.empty[Int, Position]
 
   override def preStart(): Unit = {
     super.preStart()
-    usedPositions = usedPositions.empty
     context become ready
   }
 
@@ -27,11 +22,10 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
     case BeginProcessing =>
       log.info(s"BeginProcessing...")
       initialState foreach (key => {
-        val mowerId = s"Mower-${UUID.randomUUID().toString}"
-        val mowerRef = context.actorOf(MowerActor.props(context.self), mowerId)
-        children += mowerRef
+        val mower = key._1
+        val mowerRef = context.actorOf(MowerActor.props(context.self), mower.id.toString)
         log.debug(s"Handling actor $mowerRef")
-        mowerRef ! MowerMessages.ExecuteCommands(mower = key._1, commands = key._2, 0)
+        mowerRef ! MowerMessages.ExecuteCommands(mower = mower, commands = key._2, 0)
       })
       context become working
   }
@@ -40,11 +34,12 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
     case MowerMessages.RequestAuthorisation(currentState: Mower, newState: Mower, remainingCommands: List[Command], retry: Int) =>
       log.info(s"RequestPosition:<${newState.pos}> usedPositions:<$usedPositions> retry:<$retry>")
 
-      usedPositions.filter(_ == newState.pos).toList match {
+      val filterPositions = usedPositions.filterKeys(_ != currentState.id).map(_._2).filter(_ == newState.pos)
+
+      filterPositions match {
         case Nil =>
           sender() ! MowerMessages.PositionAllowed(newState, remainingCommands: List[Command])
-          usedPositions -= currentState.pos
-          usedPositions += newState.pos
+          usedPositions = usedPositions + (currentState.id -> newState.pos)
 
         case _ if retry <= MAX_RETRY =>
           log.info(s"Position <${newState.pos}> rejected!!")
@@ -57,15 +52,7 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
 
     case MowerMessages.AllCommandsExecutedOn(mower: Mower) =>
       log.info(s"All commands executed on <$mower> ...")
-      usedPositions -= mower.pos
-
-    case SurfaceMessages.PrintSystemState =>
-      children foreach (_ ! MowerMessages.PrintPosition)
-
-    case MowerMessages.TerminateProcessing =>
-      children foreach (_ ! MowerMessages.TerminateProcessing)
-      context become ready
-      //context.system.terminate()
+      sender() !  MowerMessages.TerminateProcessing(mower)
   }
 
 }

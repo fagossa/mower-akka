@@ -20,10 +20,8 @@ class MowerActor(parent: ActorRef) extends Actor with ActorLogging {
     case MowerMessages.PositionRejected(mower: Mower, commands: List[Command], retry: Int) =>
       self ! MowerMessages.ExecuteCommands(mower, commands, retry)
 
-    case MowerMessages.PrintPosition =>
-      log.info(s"Current position ...")
-
     case MowerMessages.TerminateProcessing(mower: Mower) =>
+      log.info(s"Terminating $mower")
       context stop self
 
     case _ =>
