@@ -27,8 +27,6 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
   implicit val system = ActorSystem("A_Mower_System", config)
 
-  var mowerRef = Option.empty[ActorRef]
-
   describe("A mower actor") {
 
     it("should inform that there are no commands left") {
@@ -39,8 +37,8 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val probe = TestProbe()(system)
 
       // when
-      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
-      mowerRef.foreach(_ ! noMoreCommands)
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! noMoreCommands
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -56,8 +54,8 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val probe = TestProbe()(system)
 
       // when
-      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
-      mowerRef.foreach(_ ! commands)
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! commands
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -76,8 +74,8 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val probe = TestProbe()(system)
 
       // when
-      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
-      mowerRef.foreach(_ ! moveForward)
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! moveForward
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -92,8 +90,8 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val probe = TestProbe()(system)
 
       // when
-      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
-      mowerRef.foreach(_ ! question)
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! question
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -112,8 +110,8 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val probe = TestProbe()(system)
 
       // when
-      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
-      mowerRef.foreach(_ ! question)
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! question
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -131,8 +129,8 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val probe = TestProbe()(system)
 
       // when
-      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
-      mowerRef.foreach(_ ! question)
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! question
 
       // then
       probe.expectNoMsg(5.seconds)
@@ -141,16 +139,9 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
   }
 
   override protected def afterEach(): Unit = {
-    mowerRef.foreach(shutdown)
+    
   }
 
-  def shutdown(router: ActorRef): Unit = {
-    val deathWatch = TestProbe()
-    deathWatch.watch(router)
-
-    system.stop(router)
-    deathWatch.expectTerminated(router)
-  }
 }
 
 object MowerActorSpec {
