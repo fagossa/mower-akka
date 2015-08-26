@@ -23,7 +23,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
        |}
      """.stripMargin)
 
-  implicit val system = ActorSystem("TheHatefulEight", config)
+  implicit val system = ActorSystem("A_Mower_System", config)
 
   val surface = Surface(Dimension(1, 1))
 
@@ -61,6 +61,23 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
     }
+
+    it("should receive position allowed with empty list") {
+      // given
+      val mower = sampleMower(Random.nextInt())
+      val question = MowerMessages.PositionAllowed(mower = mower, commands = List(Forward))
+
+      val expectedResponse = MowerMessages.AllCommandsExecutedOn(mower)
+      val probe = TestProbe()(system)
+
+      // when
+      val mowerRef = system.actorOf(Props(classOf[MowerActor], probe.ref))
+      mowerRef ! question
+
+      // then
+      probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
+    }
+
 
   }
 }
