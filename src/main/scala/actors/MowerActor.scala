@@ -7,21 +7,21 @@ class MowerActor(parent: ActorRef) extends Actor with ActorLogging {
 
   def receive = {
     case MowerMessages.ExecuteCommands(mower: Mower, commands: List[Command], retry: Int) =>
-      log.info(s"Executing instructions for <$mower>, remaining: <$commands>")
+      log.debug(s"Executing instructions for <$mower>, remaining: <$commands>")
       commands match {
         case Nil => parent ! MowerMessages.AllCommandsExecutedOn(mower)
         case _ => handleRemainingCommands(mower, commands, retry)
       }
 
     case MowerMessages.PositionAllowed(newState: Mower, commands: List[Command]) =>
-      log.info(s"Position <${newState.pos}> authorized, remaining:<${commands.tail}>")
+      log.debug(s"Position <${newState.pos}> authorized, remaining:<${commands.tail}>")
       self ! MowerMessages.ExecuteCommands(newState, commands.tail, 0)
 
     case MowerMessages.PositionRejected(mower: Mower, commands: List[Command], retry: Int) =>
       self ! MowerMessages.ExecuteCommands(mower, commands, retry)
 
     case MowerMessages.TerminateProcessing(mower: Mower) =>
-      log.info(s"Terminating $mower")
+      log.debug(s"Terminating $mower")
       context stop self
 
     case _ =>

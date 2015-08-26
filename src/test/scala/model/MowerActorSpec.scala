@@ -1,20 +1,18 @@
 package model
 
-import actors.MowerMessages.RequestAuthorisation
-import actors.{MowerActor, MowerMessages}
-import akka.actor.ActorSystem
-
-//import akka.actor._
+import actors.MowerActor
+import actors.MowerMessages._
+import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.TestProbe
 import com.typesafe.config.ConfigFactory
+import model.MowerActorSpec._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FunSpec, Matchers}
 
 import scala.concurrent.duration._
 import scala.util.Random
-import MowerActorSpec._
 
-class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
+class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with BeforeAndAfterEach {
 
   val config = ConfigFactory.parseString(
     s"""
@@ -29,18 +27,20 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
 
   implicit val system = ActorSystem("A_Mower_System", config)
 
+  var mowerRef = Option.empty[ActorRef]
+
   describe("A mower actor") {
 
     it("should inform that there are no commands left") {
       // given
       val mower = sampleMower
-      val noMoreCommands = MowerMessages.ExecuteCommands(mower = mower, commands = Nil, 0)
-      val expectedResponse = MowerMessages.AllCommandsExecutedOn(mower)
+      val noMoreCommands = ExecuteCommands(mower = mower, commands = Nil, 0)
+      val expectedResponse = AllCommandsExecutedOn(mower)
       val probe = TestProbe()(system)
 
       // when
-      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
-      mowerRef ! noMoreCommands
+      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
+      mowerRef.foreach(_ ! noMoreCommands)
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -49,15 +49,15 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
     it("should rotate and finish") {
       // given
       val mower = sampleMowerFacing(North)
-      val commands = MowerMessages.ExecuteCommands(mower = mower, commands = List(Right, Right, Left), 0)
+      val commands = ExecuteCommands(mower = mower, commands = List(Right, Right, Left), 0)
 
       val expectedMower = mower.copy(ori = East)
-      val expectedResponse = MowerMessages.AllCommandsExecutedOn(expectedMower)
+      val expectedResponse = AllCommandsExecutedOn(expectedMower)
       val probe = TestProbe()(system)
 
       // when
-      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
-      mowerRef ! commands
+      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
+      mowerRef.foreach(_ ! commands)
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -70,14 +70,14 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
     it("should move forward and ask for authorisation") {
       // given
       val mower = sampleMower
-      val moveForward = MowerMessages.ExecuteCommands(mower = mower, commands = List(Forward), 0)
+      val moveForward = ExecuteCommands(mower = mower, commands = List(Forward), 0)
       val mowerResult: Mower = mower.forward
       val expectedResponse = RequestAuthorisation(mower, mowerResult, List(Forward), 0)
       val probe = TestProbe()(system)
 
       // when
-      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
-      mowerRef ! moveForward
+      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
+      mowerRef.foreach(_ ! moveForward)
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -86,14 +86,14 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
     it("should receive position allowed and then finish") {
       // given
       val mower = sampleMower
-      val question = MowerMessages.PositionAllowed(mower = mower, commands = List(Forward))
+      val question = PositionAllowed(mower = mower, commands = List(Forward))
 
-      val expectedResponse = MowerMessages.AllCommandsExecutedOn(mower)
+      val expectedResponse = AllCommandsExecutedOn(mower)
       val probe = TestProbe()(system)
 
       // when
-      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
-      mowerRef ! question
+      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
+      mowerRef.foreach(_ ! question)
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
@@ -103,22 +103,53 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers {
 
   describe("A mower actor with authorisation rejected") {
 
-    it("should receive position rejected") {
+    it("should reply by AllCommandsExecuted") {
       // given
       val mower = sampleMower
-      val question = MowerMessages.PositionRejected(mower = mower, commands = Nil, 0)
+      val question = PositionRejected(mower = mower, commands = Nil, 0)
 
-      val expectedResponse = MowerMessages.AllCommandsExecutedOn(mower)
+      val expectedResponse = AllCommandsExecutedOn(mower)
       val probe = TestProbe()(system)
 
       // when
-      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
-      mowerRef ! question
+      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
+      mowerRef.foreach(_ ! question)
 
       // then
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
     }
 
+  }
+
+  describe("A mower actor that stops itself") {
+
+    it("should not answer any more messages") {
+      // given
+      val mower = sampleMower
+      val question = TerminateProcessing(mower = mower)
+
+      val probe = TestProbe()(system)
+
+      // when
+      mowerRef = Some(system.actorOf(MowerActor.props(probe.ref)))
+      mowerRef.foreach(_ ! question)
+
+      // then
+      probe.expectNoMsg(5.seconds)
+    }
+
+  }
+
+  override protected def afterEach(): Unit = {
+    mowerRef.foreach(shutdown)
+  }
+
+  def shutdown(router: ActorRef): Unit = {
+    val deathWatch = TestProbe()
+    deathWatch.watch(router)
+
+    system.stop(router)
+    deathWatch.expectTerminated(router)
   }
 }
 
