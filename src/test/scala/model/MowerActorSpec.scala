@@ -31,7 +31,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
     it("should inform that there are no commands left") {
       // given
-      val mower = sampleMower
+      val mower = aMower()
       val noMoreCommands = ExecuteCommands(mower = mower, commands = Nil, 0)
       val expectedResponse = AllCommandsExecutedOn(mower)
       val probe = TestProbe()(system)
@@ -46,7 +46,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
     it("should rotate and finish") {
       // given
-      val mower = sampleMowerFacing(North)
+      val mower = aMowerFacing(North)
       val commands = ExecuteCommands(mower = mower, commands = List(Right, Right, Left), 0)
 
       val expectedMower = mower.copy(ori = East)
@@ -63,11 +63,53 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
   }
 
+  describe("A mower actor asking authorisation") {
+
+    it("should rotate, ask for permission, move and finish") {
+      // given
+      val mower = aMowerFacing(North)
+      val commands = ExecuteCommands(mower = mower, commands = List(Right, Right, Left, Forward), 5)
+
+      val previousMower = mower.copy(ori = East)
+      val expectedMower = mower.copy(ori = East, pos = Position(1, 0))
+      val expectedResponse = RequestAuthorisation(previousMower, expectedMower, List(Forward), 0)
+      val probe = TestProbe()(system)
+
+      // when
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! commands
+
+      // then
+      probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
+    }
+
+    it("should rotate, ask for permission, don't move and finish") {
+      // TODO: check potential bug in the implementation
+      // given
+      val mower = aMowerFacing(North)
+      val commands = ExecuteCommands(mower = mower, commands = List(Right, Right, Left, Left, Forward), 5)
+
+      val previousMower = mower.copy(ori = North)
+      val expectedMower = mower.copy(ori = North, pos = Position(0, 1))
+      val expectedResponse = RequestAuthorisation(previousMower, expectedMower, List(Forward), 0)
+      val probe = TestProbe()(system)
+
+      // when
+      val mowerRef = system.actorOf(MowerActor.props(probe.ref))
+      mowerRef ! commands
+
+      // then
+      probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
+    }
+
+  }
+
+
   describe("A mower actor with authorisation granted") {
 
     it("should move forward and ask for authorisation") {
       // given
-      val mower = sampleMower
+      val mower = aMower()
       val moveForward = ExecuteCommands(mower = mower, commands = List(Forward), 0)
       val mowerResult: Mower = mower.forward
       val expectedResponse = RequestAuthorisation(mower, mowerResult, List(Forward), 0)
@@ -83,7 +125,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
     it("should receive position allowed and then finish") {
       // given
-      val mower = sampleMower
+      val mower = aMower()
       val question = PositionAllowed(mower = mower, commands = List(Forward))
 
       val expectedResponse = AllCommandsExecutedOn(mower)
@@ -103,7 +145,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
     it("should reply by AllCommandsExecuted") {
       // given
-      val mower = sampleMower
+      val mower = aMower()
       val question = PositionRejected(mower = mower, commands = Nil, 0)
 
       val expectedResponse = AllCommandsExecutedOn(mower)
@@ -123,7 +165,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
     it("should not answer any more messages") {
       // given
-      val mower = sampleMower
+      val mower = aMower()
       val question = TerminateProcessing(mower = mower)
 
       val probe = TestProbe()(system)
@@ -138,19 +180,14 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
   }
 
-  override protected def afterEach(): Unit = {
-    
-  }
-
 }
 
 object MowerActorSpec {
 
-  val surface = Surface(Position(1, 1))
+  val surface = Surface(Position(5, 5))
 
-  def sampleMower =
-    Mower(id = Random.nextInt(), surface = surface, pos = Position(0, 0), ori = North)
+  def aMower(id : Int = Random.nextInt()) = Mower(id = id, surface = surface, pos = Position(0, 0), ori = North)
 
-  def sampleMowerFacing(ori: Orientation) = sampleMower.copy(ori = ori)
+  def aMowerFacing(ori: Orientation) = aMower().copy(ori = ori)
 
 }
