@@ -146,7 +146,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
 
 object MowerActorSpec {
 
-  val surface = Surface(Dimension(1, 1))
+  val surface = Surface(Position(1, 1))
 
   def sampleMower =
     Mower(id = Random.nextInt(), surface = surface, pos = Position(0, 0), ori = North)

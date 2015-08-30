@@ -2,8 +2,6 @@ package model
 
 import model.Mower.rotations
 
-case class Dimension(width: Int, height: Int)
-
 case class Position(x: Int, y: Int)
 
 object Position {
@@ -14,10 +12,10 @@ object Position {
     Ordering.by(e => (e.x, e.y))
 }
 
-case class Surface(dim: Dimension) {
+case class Surface(max: Position) {
   def contains(position: Position): Boolean =
     position.x >= 0 && position.y >= 0 &&
-      position.x <= dim.width && position.y <= dim.height
+      position.x <= max.x && position.y <= max.y
 
 }
 

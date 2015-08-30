@@ -24,10 +24,6 @@ class MowerActor(parent: ActorRef) extends Actor with ActorLogging {
       log.debug(s"Terminating $mower")
       context stop self
 
-    case _ =>
-      log.error("Shutting down the system!!!")
-      context.system.terminate()
-
   }
 
   def handleRemainingCommands(mower: Mower, commands: List[Command], retry: Int) = {

@@ -8,15 +8,15 @@ class MowerSpec extends FunSpec with Matchers {
 
     describe("when moving in blocking positions") {
 
-      val surface = Surface(Dimension(5, 5))
+      val surface = Surface(Position(5, 5))
 
       it("should stay if no space left going north") {
         // given
-        val mower = Mower(1, surface, Position(0, surface.dim.height), ori = North)
+        val mower = Mower(1, surface, Position(0, surface.max.x), ori = North)
         // when
         val response = mower.execute(Forward)
         // then
-        response should equal(Mower(1, surface, Position(0, surface.dim.height), ori = North))
+        response should equal(Mower(1, surface, Position(0, surface.max.y), ori = North))
       }
 
       it("should stay if no space left going west") {
@@ -30,11 +30,11 @@ class MowerSpec extends FunSpec with Matchers {
 
       it("should stay if no space left going east") {
         // given
-        val mower = Mower(1, surface, Position(surface.dim.width, 0), ori = East)
+        val mower = Mower(1, surface, Position(surface.max.x, 0), ori = East)
         // when
         val response = mower.execute(Forward)
         // then
-        response should equal(Mower(1, surface, Position(surface.dim.width, 0), ori = East))
+        response should equal(Mower(1, surface, Position(surface.max.y, 0), ori = East))
       }
 
       it("should stay if no space left going south") {
@@ -49,7 +49,7 @@ class MowerSpec extends FunSpec with Matchers {
     }
 
     describe("when moving in normal positions") {
-      val surface = Surface(Dimension(5, 5))
+      val surface = Surface(Position(5, 5))
 
       it("should move south") {
         // given

@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 
 object Application extends App {
-  val surface = Surface(Dimension(5, 5))
+  val surface = Surface(Position(5, 5))
 
   val commands: Map[Mower, List[Command]] = Map(
     Mower(1, surface, pos = Position(1, 2), ori = North) -> List(Left, Forward, Left, Forward, Left, Forward, Left, Forward, Forward)
