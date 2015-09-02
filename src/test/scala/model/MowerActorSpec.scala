@@ -2,7 +2,7 @@ package model
 
 import actors.MowerActor
 import actors.MowerMessages._
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorSystem
 import akka.testkit.TestProbe
 import com.typesafe.config.ConfigFactory
 import model.MowerActorSpec._
@@ -18,7 +18,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
     s"""
        |akka {
        |  loggers = ["akka.event.Logging$$DefaultLogger"]
-       |  loglevel = "DEBUG"
+       |  loglevel = "INFO"
        |}
        |kafka{
        |  zookeeper.connect = "127.0.0.1"
@@ -49,7 +49,7 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val mower = aMowerFacing(North)
       val commands = ExecuteCommands(mower = mower, commands = List(Right, Right, Left), 0)
 
-      val expectedMower = mower.copy(ori = East)
+      val expectedMower = mower.withOrientation(East)
       val expectedResponse = AllCommandsExecutedOn(expectedMower)
       val probe = TestProbe()(system)
 
@@ -70,8 +70,8 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       val mower = aMowerFacing(North)
       val commands = ExecuteCommands(mower = mower, commands = List(Right, Right, Left, Forward), 5)
 
-      val previousMower = mower.copy(ori = East)
-      val expectedMower = mower.copy(ori = East, pos = Position(1, 0))
+      val previousMower = mower.withOrientation(East)
+      val expectedMower = mower.withOrientation(East).withPosition(Position(1, 0))
       val expectedResponse = RequestAuthorisation(previousMower, expectedMower, List(Forward), 0)
       val probe = TestProbe()(system)
 
@@ -83,14 +83,13 @@ class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with Before
       probe.receiveOne(max = 5.seconds) shouldBe expectedResponse
     }
 
-    it("should rotate, ask for permission, don't move and finish") {
-      // TODO: check potential bug in the implementation
+    it("should rotate, ask for permission, stay and finish") {
       // given
-      val mower = aMowerFacing(North)
+      val mower = aMowerFacing(South).withPosition(Position(0, 1))
       val commands = ExecuteCommands(mower = mower, commands = List(Right, Right, Left, Left, Forward), 5)
 
-      val previousMower = mower.copy(ori = North)
-      val expectedMower = mower.copy(ori = North, pos = Position(0, 1))
+      val previousMower = mower.withOrientation(South)
+      val expectedMower = mower.withOrientation(South).withPosition(Position(0, 0))
       val expectedResponse = RequestAuthorisation(previousMower, expectedMower, List(Forward), 0)
       val probe = TestProbe()(system)
 
@@ -186,8 +185,15 @@ object MowerActorSpec {
 
   val surface = Surface(Position(5, 5))
 
-  def aMower(id : Int = Random.nextInt()) = Mower(id = id, surface = surface, pos = Position(0, 0), ori = North)
+  def aMower(id: Int = Random.nextInt()) = Mower(id = id, surface = surface, pos = Position(0, 0), ori = North)
 
   def aMowerFacing(ori: Orientation) = aMower().copy(ori = ori)
+
+  implicit class MowerOperations(mower: Mower) {
+
+    def withPosition(newPos: Position) = mower.copy(pos = newPos)
+
+    def withOrientation(newOri: Orientation) = mower.copy(ori = newOri)
+  }
 
 }

@@ -69,6 +69,22 @@ class MowerSpec extends FunSpec with Matchers {
         response should equal(Mower(1, surface, Position(2, 3), ori = North))
       }
     }
+
+    describe("When executing multiple commands") {
+      val surface = Surface(Position(5, 5))
+
+      it("") {
+        // given
+        val mower = Mower(1, surface, Position(0, 1), ori = South)
+        val moverList = List(Right, Right, Left, Left, Forward)
+        val expectedMower = mower.copy(ori = South, pos = Position(0, 0))
+
+        // when
+        val response: Mower = moverList.foldLeft(mower)((curr: Mower, next: Command) => curr.execute(next))
+        // then
+        response should equal(expectedMower)
+      }
+    }
   }
 
 }
