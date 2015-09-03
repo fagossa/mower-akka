@@ -5,7 +5,7 @@ import actors.SurfaceMessages.BeginProcessing
 import akka.actor._
 import model.{Command, Mower, Position, Surface}
 
-class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor with Stash with ActorLogging {
+class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor with ActorLogging {
 
   val MAX_RETRY = 10
 
