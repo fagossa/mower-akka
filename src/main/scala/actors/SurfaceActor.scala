@@ -22,23 +22,29 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
     case BeginProcessing =>
       log.info(s"BeginProcessing...")
       initialState foreach (key => {
-        val mower = key._1
-        val mowerRef = context.actorOf(MowerActor.props(context.self), mower.id.toString)
+
+        // TODO for each key (mower) create a MowerActor with the SurfaceActor in parameter
+
         log.debug(s"Handling actor $mowerRef")
-        mowerRef ! MowerMessages.ExecuteCommands(mower = mower, commands = key._2, 0)
+
+        // TODO for each MowerActor send ExecuteCommands message which takes the current mower and command list
+
       })
-      context become working
+
+      // TODO Switch to working state
+
   }
 
   def working: Receive = {
     case MowerMessages.RequestAuthorisation(currentState: Mower, newState: Mower, remainingCommands: List[Command], retry: Int) =>
       log.info(s"RequestPosition:<${newState.pos}> usedPositions:<$usedPositions> retry:<$retry>")
 
+      // Find if another mower is in the new position
       val filterPositions = usedPositions.filterKeys(_ != currentState.id).map(_._2).filter(_ == newState.pos)
 
       filterPositions match {
         case Nil =>
-          sender() ! MowerMessages.PositionAllowed(newState, remainingCommands: List[Command])
+          // TODO no mower is present at the new position, we can send to the sender the PositionAllowed message
           usedPositions = usedPositions + (currentState.id -> newState.pos)
 
         case _ if retry <= MAX_RETRY =>
@@ -50,9 +56,8 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
           sender() ! MowerMessages.TerminateProcessing(currentState)
       }
 
-    case MowerMessages.AllCommandsExecutedOn(mower: Mower) =>
-      log.info(s"All commands executed on <$mower> ...")
-      sender() !  MowerMessages.TerminateProcessing(mower)
+      // TODO add a case AllCommandsExecutedOn and tell to the sender to terminate the process (TerminateProcessing message)
+
   }
 
 }

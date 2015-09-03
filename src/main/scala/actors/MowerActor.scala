@@ -6,23 +6,24 @@ import model.{Command, Forward, Mower}
 class MowerActor(parent: ActorRef) extends Actor with ActorLogging {
 
   def receive = {
-    case MowerMessages.ExecuteCommands(mower: Mower, commands: List[Command], retry: Int) =>
-      log.debug(s"Executing instructions for <$mower>, remaining: <$commands>")
-      commands match {
-        case Nil => parent ! MowerMessages.AllCommandsExecutedOn(mower)
-        case _ => handleRemainingCommands(mower, commands, retry)
-      }
 
-    case MowerMessages.PositionAllowed(newState: Mower, commands: List[Command]) =>
-      log.debug(s"Position <${newState.pos}> authorized, remaining:<${commands.tail}>")
-      self ! MowerMessages.ExecuteCommands(newState, commands.tail, 0)
+    // TODO add four case
+    // TODO first one has to handle ExecuteCommands message
 
-    case MowerMessages.PositionRejected(mower: Mower, commands: List[Command], retry: Int) =>
-      self ! MowerMessages.ExecuteCommands(mower, commands, retry)
+    log.debug(s"Executing instructions for <$mower>, remaining: <$commands>")
 
-    case MowerMessages.TerminateProcessing(mower: Mower) =>
-      log.debug(s"Terminating $mower")
-      context stop self
+    commands match {
+      case Nil => // TODO no commands left, send AllCommandsExecutedOn message to the parent actor
+      case _ => // TODO call handleRemainingCommands function
+    }
+
+    // TODO second one has to handle PositionAllowed message and send to itself ExecuteCommands message
+    log.debug(s"Position <${newState.pos}> authorized, remaining:<${commands.tail}>")
+
+    // TODO third one has to handle PositionRejected message and send to itself ExecuteCommands message
+
+    // TODO fourth one has to handle TerminateProcessing message and stop the current actor
+    log.debug(s"Terminating $mower")
 
   }
 
