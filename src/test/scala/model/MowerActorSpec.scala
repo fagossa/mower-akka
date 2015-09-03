@@ -4,7 +4,6 @@ import actors.MowerActor
 import actors.MowerMessages._
 import akka.actor.ActorSystem
 import akka.testkit.TestProbe
-import com.typesafe.config.ConfigFactory
 import model.MowerActorSpec._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, FunSpec, Matchers}
@@ -14,18 +13,7 @@ import scala.util.Random
 
 class MowerActorSpec extends FunSpec with ScalaFutures with Matchers with BeforeAndAfterEach {
 
-  val config = ConfigFactory.parseString(
-    s"""
-       |akka {
-       |  loggers = ["akka.event.Logging$$DefaultLogger"]
-       |  loglevel = "INFO"
-       |}
-       |kafka{
-       |  zookeeper.connect = "127.0.0.1"
-       |}
-     """.stripMargin)
-
-  implicit val system = ActorSystem("A_Mower_System", config)
+  implicit val system = ActorSystem("A_Mower_System")
 
   describe("A mower actor") {
 
