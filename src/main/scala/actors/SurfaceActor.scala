@@ -13,7 +13,7 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
 
   override def preStart(): Unit = {
     super.preStart()
-    context become ready
+    // TODO switch to ready state
   }
 
   def receive = PartialFunction.empty
