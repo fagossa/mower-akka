@@ -73,7 +73,7 @@ class MowerSpec extends FunSpec with Matchers {
     describe("When executing multiple commands") {
       val surface = Surface(Position(5, 5))
 
-      it("") {
+      it("should be in the right orientation and position") {
         // given
         val mower = Mower(1, surface, Position(0, 1), ori = South)
         val moverList = List(Right, Right, Left, Left, Forward)
