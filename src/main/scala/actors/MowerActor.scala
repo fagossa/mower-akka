@@ -62,6 +62,7 @@ object MowerMessages {
 
 object MowerActor {
 
-  def props(parent: ActorRef): Props = Props(classOf[MowerActor], parent)
+  // TODO finish to implement the props function
+  // def props(parent: ActorRef) =
 
 }

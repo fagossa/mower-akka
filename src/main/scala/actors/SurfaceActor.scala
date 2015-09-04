@@ -49,11 +49,11 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
 
         case _ if retry <= MAX_RETRY =>
           log.info(s"Position <${newState.pos}> rejected!!")
-          sender() ! MowerMessages.PositionRejected(newState, remainingCommands, retry + 1)
+          // TODO send to sender that the PositionRejected message (think to increment retry parameter)
 
         case _ if retry > MAX_RETRY =>
           log.info(s"Stopping mower:<$currentState> because no attempts remaining!")
-          sender() ! MowerMessages.TerminateProcessing(currentState)
+          // TODO As we reach the end, send to sender the TerminateProcessing message
       }
 
       // TODO add a case AllCommandsExecutedOn and tell to the sender to terminate the process (TerminateProcessing message)
