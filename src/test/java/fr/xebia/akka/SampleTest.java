@@ -1,7 +1,4 @@
-/*
- * Copyright (C) 2016 Lightbend Inc. <http://www.lightbend.com>
- */
-package com.lightbend.akkasample;
+package fr.xebia.akka;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
