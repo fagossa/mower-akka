@@ -8,18 +8,19 @@ import fr.xebia.command.Position;
 import fr.xebia.mower.Mower;
 import fr.xebia.mower.MowerActor;
 import fr.xebia.mower.MowerMessages;
-import javaslang.collection.HashMap;
 import javaslang.collection.List;
-import javaslang.collection.Map;
 
-import static java.lang.String.*;
+import java.util.Map;
+import java.util.HashMap;
+
+import static java.lang.String.format;
 
 class SurfaceActor extends AbstractLoggingActor {
 
+    private Map<Integer, Position> usedPositions = new HashMap<>();
     private int MAX_RETRY = 10;
     private Surface surface;
     private List<Mower> initialState;
-    Map<Integer, Position> usedPositions = new HashMap<>();
 
     public SurfaceActor(Surface surface, List<Mower> initialState) {
         this.surface = surface;
@@ -47,6 +48,7 @@ class SurfaceActor extends AbstractLoggingActor {
             log().info(format("Handling actor <%s>", mowerRef));
             mowerRef.tell(new MowerMessages.ExecuteCommands(mower, 0), self());
         });
+
         context().become(
                 ReceiveBuilder
                         .match(MowerMessages.RequestAuthorisation.class, this::onRequestAuthorisation)
@@ -57,8 +59,9 @@ class SurfaceActor extends AbstractLoggingActor {
 
     private void onRequestAuthorisation(MowerMessages.RequestAuthorisation message) {
         // TODO
-        log().info(format("RequestPosition:<%s> usedPositions:<$usedPositions> retry:<$retry>",
-                message.newState.position()));
+        log().info(format("RequestPosition:<%s> usedPositions:<%s> retry:<%s>",
+                message.newState.position(), usedPositions, message.retry));
+
     }
 
     private void onAllCommandsExecutedOn(MowerMessages.AllCommandsExecutedOn message) {
