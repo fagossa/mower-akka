@@ -8,19 +8,18 @@ import fr.xebia.command.Position;
 import fr.xebia.mower.Mower;
 import fr.xebia.mower.MowerActor;
 import fr.xebia.mower.MowerMessages;
+import javaslang.collection.HashMap;
 import javaslang.collection.List;
-
-import java.util.Map;
-import java.util.HashMap;
+import javaslang.collection.Map;
 
 import static java.lang.String.format;
 
 class SurfaceActor extends AbstractLoggingActor {
 
-    private Map<Integer, Position> usedPositions = new HashMap<>();
-    private int MAX_RETRY = 10;
-    private Surface surface;
-    private List<Mower> initialState;
+    private final int MAX_RETRY = 10;
+    private final Surface surface;
+    private final List<Mower> initialState;
+    private Map<String, Position> usedPositions = HashMap.empty();
 
     public SurfaceActor(Surface surface, List<Mower> initialState) {
         this.surface = surface;
@@ -61,6 +60,30 @@ class SurfaceActor extends AbstractLoggingActor {
         // TODO
         log().info(format("RequestPosition:<%s> usedPositions:<%s> retry:<%s>",
                 message.newState.position(), usedPositions, message.retry));
+
+        /*usedPositions
+                .filter((tuple)->tuple._1 == message.currentState.id());
+        val filterPositions = usedPositions.filterKeys(_ != currentState.id).map(_._2).filter(_ == newState.pos)*/
+
+        /*case MowerMessages.RequestAuthorisation(currentState: Mower, newState: Mower, remainingCommands: List[Command], retry: Int) =>
+      log.info(s"RequestPosition:<${newState.pos}> usedPositions:<$usedPositions> retry:<$retry>")
+
+      val filterPositions = usedPositions.filterKeys(_ != currentState.id).map(_._2).filter(_ == newState.pos)
+
+      filterPositions match {
+        case Nil =>
+          sender() ! MowerMessages.PositionAllowed(newState, remainingCommands: List[Command])
+          usedPositions = usedPositions + (currentState.id -> newState.pos)
+
+        case _ if retry <= MAX_RETRY =>
+          log.info(s"Position <${newState.pos}> rejected!!")
+          sender() ! MowerMessages.PositionRejected(newState, remainingCommands, retry + 1)
+
+        case _ if retry > MAX_RETRY =>
+          log.info(s"Stopping mower:<$currentState> because no attempts remaining!")
+          sender() ! MowerMessages.TerminateProcessing(currentState)
+      }
+*/
 
     }
 

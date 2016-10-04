@@ -4,16 +4,22 @@ import fr.xebia.command.Command;
 import fr.xebia.command.Location;
 import fr.xebia.command.Position;
 import javaslang.collection.List;
+import javaslang.control.Option;
+import javaslang.control.Try;
+
+import static javaslang.API.For;
 
 public class Mower {
     private final Position position;
     private final List<Command> commands;
     private String name;
+    private Position limit;
     private Location location;
 
-    public Mower(String name, Position position, Location location, List<Command> commands) {
+    public Mower(String name, Position position, Position limit, Location location, List<Command> commands) {
         this.name = name;
         this.position = position;
+        this.limit = limit;
         this.location = location;
         this.commands = commands;
     }
@@ -35,14 +41,20 @@ public class Mower {
     }
 
     Mower dequeueCommand() {
-        return commands.headOption().map(curr -> {
-            final int newAngle = curr.angle() + location.angle();
-            Location newLocation = Location.from(newAngle).orElse(location);
-            return new Mower(name, position, newLocation, commands);
-        }).getOrElse(this);
+        Option<Mower> maybeMower = For(commands.headOption(), (command) ->
+                For(Location.rotate(location.angle(), command.angle()), newLocation ->
+                        For(Position.advance(newLocation, position, limit))
+                                .yield((newPosition) ->
+                                        new Mower(name, newPosition, limit, newLocation, commands.tail())
+                                )
+                )
+        ).toOption();
+        return maybeMower.getOrElse(this);
     }
 
     boolean commandNeedToAskAuth() {
-        return commands().peek().needToAskAuth();
+        return Try.of(() -> commands().peek())
+                .map(Command::needToAskAuth)
+                .getOrElse(false);
     }
 }
