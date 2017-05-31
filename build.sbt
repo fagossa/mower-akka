@@ -9,7 +9,7 @@ scalaVersion := "2.11.8"
 val akkaVersion = "2.4.18"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.0" % "test",
+  "org.scalatest" %% "scalatest" % "2.2.6" % "test",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test" withSources(),
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion % "test",
