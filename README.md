@@ -1,3 +1,12 @@
-# Mower-akka [ ![Codeship Status for fagossa/mower-akka](https://codeship.com/projects/ab4a4680-0774-0133-4924-4203d1598ad8/status?branch=master)](https://codeship.com/projects/89997)
+[![License][license-badge]][license-url]
+
+# Mower-akka 
 
 A simple implementation of the mower scenario using akka and scala 
+
+## I need help
+
+The [solution](https://github.com/fagossa/mower-akka/tree/solution) brach could be useful.
+
+[license-badge]: https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square
+[license-url]: LICENSE.txt
