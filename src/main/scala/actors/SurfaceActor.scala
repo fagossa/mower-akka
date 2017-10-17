@@ -13,7 +13,7 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
 
   override def preStart(): Unit = {
     super.preStart()
-    // TODO switch to ready state
+    // TODO 2 switch to ready state
   }
 
   def receive = PartialFunction.empty
@@ -23,15 +23,15 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
       log.info(s"BeginProcessing...")
       initialState foreach (key => {
 
-        // TODO for each key (mower) create a MowerActor with the SurfaceActor in parameter
+        // TODO 3.1 for each key (mower) create a MowerActor with the SurfaceActor in parameter
 
         log.debug(s"Handling actor $mowerRef")
 
-        // TODO for each MowerActor send ExecuteCommands message which takes the current mower and command list
+        // TODO 3.2 for each MowerActor send ExecuteCommands message which takes the current mower and command list
 
       })
 
-      // TODO Switch to working state
+      // TODO 3.3 Switch to working state
 
   }
 
@@ -44,19 +44,19 @@ class SurfaceActor(val sur: Surface, initialState: SurfaceConfig) extends Actor 
 
       filterPositions match {
         case Nil =>
-          // TODO no mower is present at the new position, we can send to the sender the PositionAllowed message
+          // TODO 4.1 no mower is present at the new position, we can send to the sender the PositionAllowed message
           usedPositions = usedPositions + (currentState.id -> newState.pos)
 
         case _ if retry <= MAX_RETRY =>
           log.info(s"Position <${newState.pos}> rejected!!")
-          // TODO send to sender that the PositionRejected message (think to increment retry parameter)
+          // TODO 4.2 send to sender that the PositionRejected message (think to increment retry parameter)
 
         case _ if retry > MAX_RETRY =>
           log.info(s"Stopping mower:<$currentState> because no attempts remaining!")
-          // TODO As we reach the end, send to sender the TerminateProcessing message
+          // TODO 4.3 As we reach the end, send to sender the TerminateProcessing message
       }
 
-      // TODO add a case AllCommandsExecutedOn and tell to the sender to terminate the process (TerminateProcessing message)
+      // TODO 4.4 add a case AllCommandsExecutedOn and tell to the sender to terminate the process (TerminateProcessing message)
 
   }
 
