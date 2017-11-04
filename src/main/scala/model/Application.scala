@@ -15,8 +15,8 @@ object Application extends App {
   val config = ConfigFactory.load()
   val system = ActorSystem("system", config)
 
-  // TODO declare the SurfaceActor actor with its props function with surface and commands as parameters
-  // TODO Send the BeginProcessing message to that actor
+  // TODO 5.1 declare the SurfaceActor actor with its props function with surface and commands as parameters
+  // TODO 5.2 Send the BeginProcessing message to that actor
 
   system.registerOnTermination {
     System.exit(1)

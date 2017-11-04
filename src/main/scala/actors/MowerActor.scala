@@ -7,22 +7,22 @@ class MowerActor(parent: ActorRef) extends Actor with ActorLogging {
 
   def receive = {
 
-    // TODO add four case
-    // TODO first one has to handle ExecuteCommands message
+    // TODO 1.2 add four case
+    // TODO 1.2.1 first one has to handle ExecuteCommands message
 
     log.debug(s"Executing instructions for <$mower>, remaining: <$commands>")
 
     commands match {
-      case Nil => // TODO no commands left, send AllCommandsExecutedOn message to the parent actor
-      case _ => // TODO call handleRemainingCommands function
+      case Nil => // TODO 1.2.1.1 no commands left, send AllCommandsExecutedOn message to the parent actor
+      case _ => // TODO 1.2.1.2 call handleRemainingCommands function
     }
 
-    // TODO second one has to handle PositionAllowed message and send to itself ExecuteCommands message
+    // TODO 1.2.2 second one has to handle PositionAllowed message and send to itself ExecuteCommands message
     log.debug(s"Position <${newState.pos}> authorized, remaining:<${commands.tail}>")
 
-    // TODO third one has to handle PositionRejected message and send to itself ExecuteCommands message
+    // TODO 1.2.3 third one has to handle PositionRejected message and send to itself ExecuteCommands message
 
-    // TODO fourth one has to handle TerminateProcessing message and stop the current actor
+    // TODO 1.2.4 fourth one has to handle TerminateProcessing message and stop the current actor
     log.debug(s"Terminating $mower")
 
   }
@@ -62,7 +62,7 @@ object MowerMessages {
 
 object MowerActor {
 
-  // TODO finish to implement the props function
+  // TODO 1.1 finish to implement the props function
   // def props(parent: ActorRef) =
 
 }
